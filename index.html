@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChessLite</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="loginWrapper">
+        <div class="logo">
+            <h1>ChessLite</h1>
+            <img src="images/Pawn.png" style="width: 75px; height: auto;">
+        </div>
+        <div class="container">
+            <div class="inputBox">
+                <label for="username">Username</label>
+                <input id="username" type="text">
+            </div>
+            <div class="inputBox">
+                <label for="password">Password</label>
+                <input id="password" type="text">
+            </div>
+            <div class="signIn">
+                <button onclick="login()">Login</button>
+                <script> function login() {window.location.href = "JoinScreen.html";} </script>
+                <button id="sign up">Sign up</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
