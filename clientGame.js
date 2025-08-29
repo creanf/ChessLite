@@ -1,7 +1,18 @@
-const moveDetails = {type: "first", id: null, newId: null};
+const moveDetails = {type: "first", id: null, newId: null, started: false, yourMove: false};
 
 window.addEventListener('DOMContentLoaded', () => {
     makeClickEvents();
+    const firstPlayerName = localStorage.getItem('firstPlayerName');
+    const secondPlayerName = localStorage.getItem('secondPlayerName');
+    const id = localStorage.getItem('id');
+    const isFirst = localStorage.getItem('isFirst');
+    console.log("name 1 - " + firstPlayerName + " name 2 - " + secondPlayerName + " isFirst - " + isFirst);
+    document.getElementById('gameId').innerText = "Game ID: " + id;
+    document.getElementById("nameFirstPlayer").innerText = "Player 1: " + firstPlayerName;
+    document.getElementById("nameSecondPlayer").innerText = "Player 2: " + secondPlayerName;
+    if (!isFirst){
+        //flip the board
+    }
 });
 
 document.addEventListener("move", (e) => {

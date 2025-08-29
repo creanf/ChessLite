@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body style="display: flex; flex-direction: column;">
-    <div id="name">Player 1: ???</div>
+    <div id="gameId">Game ID: ???</div>
+    <div id="nameSecondPlayer">Player 1: ???</div>
     <div class="board" style="margin:50px; margin-top: 10px; margin-bottom: 10px;">
         <img src="images/chessboard_no_cords.png" style="width: 500px; height: auto;">
         <div class="overlayGrid">
@@ -83,7 +84,9 @@
             <div id="h1" class="square"><img name="white_rook" src="images/white_rook.png" style="width: 29px; height: auto;"></div>
         </div>
     </div>
-    <div id="name">Player 2: ???</div>
+    <div id="nameFirstPlayer">Player 2: ???</div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script> const socket = io(); </script>
 </body>
 <script src="clientGame.js"></script>
 </html>
