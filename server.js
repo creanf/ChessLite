@@ -37,36 +37,25 @@ app.post("/addPlayer", (req, res) => {
   }
 })
 
-/*
-app.get("", (req, res) => {
-    res.send();
-});
-
-app.post("", (req, res) => {
-    res.send();
-});*/
-
-// middleware?
-
-/*
-function middleware3(req, res, next) {
-  console.log("Middleware 3");
-  res.send("Response from Middleware 3");
-};
-
-app.use(middleware1);
-app.use(middleware2); */
-
 // when the user enters a name and id, it will check if the id exists and if it is full and post to the id to name map and add their name and id to the game html file
 // when they join the game, they will be added to a socketio room with the roomId
 
 io.on('connection', (socket) => {
   // rooms here
   console.log('User connected');
-  /*
-  socket.on('', (msg) => {
 
-  });*/
+  socket.on('joinRoom', (joinData) => {
+    if (joinData.startGame == "true"){
+      socket.join(joinData.roomId); // socket = client specific, io = everyone / everyone in room
+      console.log(joinData.playerName + " joined room " + joinData.roomId);
+      io.to(joinData.roomId).emit("startGame", {playerTwo: joinData.playerName});
+    }
+    else {
+      socket.join(joinData.roomId);
+      console.log(joinData.playerName + " joined room " + joinData.roomId);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('user disconnected');
   });

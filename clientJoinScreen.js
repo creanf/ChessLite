@@ -28,14 +28,14 @@ window.addEventListener('DOMContentLoaded', () => {
             if (roomInfo.joinType == "first player"){
                 localStorage.setItem('firstPlayerName', name);
                 localStorage.setItem('secondPlayerName', '');
-                localStorage.setItem('isFirst', true);
+                localStorage.setItem('isFirst', 'true');
                 localStorage.setItem('id', roomId);
                 window.location.href = 'game.html';
             }
             else if (roomInfo.joinType == "second player"){
-                localStorage.setItem('firstPlayerName', name);
-                localStorage.setItem('secondPlayerName', roomInfo.otherPlayer);
-                localStorage.setItem('isFirst', false);
+                localStorage.setItem('firstPlayerName', roomInfo.otherPlayer);
+                localStorage.setItem('secondPlayerName', name);
+                localStorage.setItem('isFirst', 'false');
                 localStorage.setItem('id', roomId);
                 window.location.href = 'game.html';
             }

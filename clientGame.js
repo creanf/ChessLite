@@ -1,4 +1,4 @@
-const moveDetails = {type: "first", id: null, newId: null, started: false, yourMove: false};
+const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false};
 
 window.addEventListener('DOMContentLoaded', () => {
     makeClickEvents();
@@ -10,14 +10,35 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('gameId').innerText = "Game ID: " + id;
     document.getElementById("nameFirstPlayer").innerText = "Player 1: " + firstPlayerName;
     document.getElementById("nameSecondPlayer").innerText = "Player 2: " + secondPlayerName;
-    if (!isFirst){
+    if (!(isFirst == 'true')){
         //flip the board
+        const joinInfo = {
+            playerName: secondPlayerName,
+            roomId: id,
+            startGame: "true",
+        }
+        socket.emit("joinRoom", joinInfo);
     }
+    else{
+        //emit name, room id, and if we want the game to start (not yet)
+        const joinInfo = {
+            playerName: firstPlayerName,
+            roomId: id,
+            startGame: "false",
+        }
+        socket.emit("joinRoom", joinInfo);
+    }
+});
+
+socket.on("startGame", (newPlayer) => {
+    console.log("starting game");
+    const playerTwoName = newPlayer.playerTwo;
+    document.getElementById("nameSecondPlayer").innerText = "Player 2: " + playerTwoName;
 });
 
 document.addEventListener("move", (e) => {
     const { at } = e.detail;
-    if (moveDetails.type == "first"){
+    if (moveDetails.type == "first" && moveDetails.gameStarted && moveDetails.yourMove){
         moveDetails.id = at;
         moveDetails.type = "second";
     }
