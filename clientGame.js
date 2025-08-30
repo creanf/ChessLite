@@ -2,7 +2,6 @@ const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, y
 const playerDetails = {isPlayerOne: false, roomId: ""};
 
 window.addEventListener('DOMContentLoaded', () => {
-    makeClickEvents();
     const firstPlayerName = localStorage.getItem('firstPlayerName');
     const secondPlayerName = localStorage.getItem('secondPlayerName');
     const id = localStorage.getItem('id');
@@ -14,6 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById("nameSecondPlayer").innerText = "Player 2: " + secondPlayerName;
     if (!(isFirst == 'true')){
         //flip the board
+        flipBoard();
         const joinInfo = {
             playerName: secondPlayerName,
             roomId: id,
@@ -31,6 +31,7 @@ window.addEventListener('DOMContentLoaded', () => {
         playerDetails.isPlayerOne = true;
         socket.emit("joinRoom", joinInfo);
     }
+    makeClickEvents();
 });
 
 socket.on("startGame", (newPlayer) => {
@@ -79,6 +80,24 @@ document.addEventListener("move", (e) => {
     }
 });
 
+const flipBoard = function() {
+    //const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    // first copy all existing elements into an so we have copies to reference
+    const boardGrid = document.getElementById("boardGrid");
+    const squaresArray = Array.from(boardGrid.querySelectorAll("div")); // (static, this won't be updated in the for loop, so we can treat it as a copy)
+    boardGrid.innerHTML = "";
+    // then add the new elements in order
+    for (let i = 7; i > -1; i--){
+        for (let j = 7; j > -1 ; j--){
+            //const currLetter = letters[j];
+            const arrayNumber = i * 8 + j;
+            const piece = squaresArray[arrayNumber]
+            //piece.id = String(currLetter + i);
+            boardGrid.appendChild(piece);
+        }
+    }
+}
+
 const makeClickEvents = function(){
     const posLetters = ['a','b','c','d','e','f','g','h'];
     for (let i = 0; i < 8; i++) {
@@ -96,10 +115,7 @@ const makeClickEvents = function(){
 const secondClick = function(newId, id) {
     const newPosition = document.getElementById(newId);
     const position = document.getElementById(id);
-    if (newId == id) {
-        const evt = new CustomEvent("secondMove", { detail: { after: id}}); ///////////////// what?
-        document.dispatchEvent(evt);
-    }
+    ///////////////// FIXME: add newId == id logic here (AKA, do not count it as a move, may need to fix some stuff in the "move" event listener section too)
     const img = position.querySelector("img");
     const pieceImage = img.getAttribute("src");
     const piece = img.getAttribute("name");
