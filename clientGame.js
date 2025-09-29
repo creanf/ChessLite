@@ -1,22 +1,29 @@
-const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false};
+const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false, selectionMode: "piece" /**or position */};
 const playerDetails = {isPlayerOne: false, roomId: ""};
 
-window.addEventListener('DOMContentLoaded', () => {
+const getPlayerData = () => {
     const firstPlayerName = localStorage.getItem('firstPlayerName');
     const secondPlayerName = localStorage.getItem('secondPlayerName');
     const id = localStorage.getItem('id');
     const isFirst = localStorage.getItem('isFirst');
+    return {firstPlayerName, secondPlayerName, id, isFirst};
+}
+
+const setPlayerNameView = ({firstPlayerName, secondPlayerName, id, isFirst}) => {
     playerDetails.roomId = id;
     console.log("name 1 - " + firstPlayerName + " name 2 - " + secondPlayerName + " isFirst - " + isFirst);
     document.getElementById('gameId').innerText = "Game ID: " + id;
     document.getElementById("nameFirstPlayer").innerText = "Player 1: " + firstPlayerName;
     document.getElementById("nameSecondPlayer").innerText = "Player 2: " + secondPlayerName;
-    if (!(isFirst == 'true')){
+}
+
+const emitJoinData = (data) => {
+    if (!(data.isFirst == 'true')){
         //flip the board
         flipBoard();
         const joinInfo = {
-            playerName: secondPlayerName,
-            roomId: id,
+            playerName: data.secondPlayerName,
+            roomId: data.id,
             startGame: "true",
         }
         socket.emit("joinRoom", joinInfo);
@@ -24,15 +31,23 @@ window.addEventListener('DOMContentLoaded', () => {
     else{
         //emit name, room id, and if we want the game to start (not yet)
         const joinInfo = {
-            playerName: firstPlayerName,
-            roomId: id,
+            playerName: data.firstPlayerName,
+            roomId: data.id,
             startGame: "false",
         }
         playerDetails.isPlayerOne = true;
         socket.emit("joinRoom", joinInfo);
     }
+}
+
+const getAndEmitPlayerData = () => {
+    const data = getPlayerData();
+    setPlayerNameView(data);
+    emitJoinData(data);
     makeClickEvents();
-});
+}
+
+window.addEventListener('DOMContentLoaded', getAndEmitPlayerData);
 
 socket.on("startGame", (newPlayer) => {
     console.log("starting game");
