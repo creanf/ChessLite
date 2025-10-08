@@ -1,4 +1,4 @@
-html, body {
+html {
   margin: 0;
   padding: 0;
   height: 100vh;
@@ -38,6 +38,25 @@ body {
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   flex-direction: column;
   gap: 10px;
+}
+
+.roomInfoForm {
+  display: flex;
+  background-color: rgb(225, 198, 160);
+  padding: 20px; /* space inside an element*/
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parentRoomInfoForm {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center; /*x axis*/
+  justify-content: center; /*y axis*/
 }
 
 .inputBox {
