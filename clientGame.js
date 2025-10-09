@@ -1,9 +1,22 @@
-const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false, selectionMode: "piece" /**or position */};
+const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false, piece: "", takenPiece: "", selectionMode: "piece" /**or position */};
 const playerDetails = {isPlayerOne: false, roomId: ""};
+const takenPieces = {};
+const board = [ ["wR","wN","wB","wQ","wK","wB","wN","wR"],["wP","wP","wP","wP","wP","wP","wP","wP"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["bP","bP","bP","bP","bP","bP","bP","bP"],["bR","bN","bB","bQ","bK","bB","bN","bR"] ]; // the html selection stuff is unnecessary if this works
 
 // TO DO: Make more functional
 // TO DO: Assign the first player to a random color, then the second to the remaining color
 // TO DO: Close game room at end of game
+// TO DO: Use moveOnArray and isValidMove in main move event listener, print the board to check if working
+
+const printBoard = () => {
+    for (let i = 7; i >= 0; --i) {
+        let rowString = ""
+        for (let j = 0; j < 8; ++j) {
+            rowString += board[i][j] + " ";
+        }
+        console.log(rowString);
+    }
+}
 
 const getPlayerData = () => {
     const firstPlayerName = localStorage.getItem('firstPlayerName');
@@ -74,6 +87,31 @@ const movePiece = (position, newPosition) => {
     newImg.style = style;
 }
 
+const movePieceOnArray = (position, newPosition) => { //////////TO DO
+    const letterConvert = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
+
+    const currPos = {row: parseInt(position[1])-1, col: letterConvert[position[0]]};
+    const destPos = {row: parseInt(newPosition[1])-1, col: letterConvert[newPosition[0]]};
+
+    const currPiece = board[currPos.row][currPos.col];
+    const destPiece = board[destPos.row][destPos.col];
+
+    // add to taken pieces here
+
+    board[currPos.row][currPos.col] = "__";
+    board[destPos.row][destPos.col] = currPiece;
+
+    console.log("curr piece: " + currPiece + " dest piece: " + destPiece + " currRow: " + currPos.row + " currCol: " + currPos.col + " destRow: " + destPos.row + " destCol: " + destPos.col);
+
+    printBoard();
+}
+
+// @returns bool which is true if the move is value
+const isValidMove = (moveDetails) => { //////////////TO DO
+    const {id, newId, piece, newPiece} = moveDetails;
+    
+}
+
 const flipBoard = function() {
     //const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     // first copy all existing elements into an so we have copies to reference
@@ -106,15 +144,17 @@ const makeClickEvents = function(){
     }
 }
 
-const secondClick = function(newId, id) {
+const secondClick = function(id, newId) {
     const newPosition = document.getElementById(newId);
     const position = document.getElementById(id);
+    movePieceOnArray(moveDetails.id, moveDetails.newId) ////////////////This and socket move could be the same function if we just used io
     movePiece(position, newPosition);
 }
 
 window.addEventListener('DOMContentLoaded', getAndEmitPlayerData);
 
 socket.on("startGame", (newPlayer) => {
+    printBoard();
     console.log("starting game");
     moveDetails.gameStarted = true;
     const playerTwoName = newPlayer.playerTwo;
@@ -125,22 +165,27 @@ socket.on("startGame", (newPlayer) => {
 });
 
 document.addEventListener("move", (e) => {
-    const { at } = e.detail;
+    const { at } = e.detail; //coordinates drom the move event
     if (moveDetails.type == "first" && moveDetails.gameStarted && moveDetails.yourMove){
         moveDetails.id = at;
         moveDetails.type = "second";
+        const pieceElement = document.getElementById(at);
+        moveDetails.piece = pieceElement.querySelector('img').name;
     }
     else if (moveDetails.type == "second"){
+        // function here called check if valid or (or something)
+        // if the move is not valid, reset the move data            ////////////////////
         moveDetails.newId = at;
         moveDetails.type = "first";
         moveDetails.yourMove = false;
         socket.emit("move", {from: moveDetails.id,to: moveDetails.newId,roomId: playerDetails.roomId});
-        secondClick(moveDetails.newId, moveDetails.id);
+        secondClick(moveDetails.id, moveDetails.newId);
     }
 });
 
 socket.on("move", (moveData) => {  // recieved when the other player makes a move
     console.log("move seen")
-    const {newPosition, position} = parseMoveData(moveData);
+    const {newPosition, position} = parseMoveData(moveData); // this gives html element data not actual coordinates
+    movePieceOnArray(moveData.from, moveData.to);
     movePiece(position, newPosition);
 })
