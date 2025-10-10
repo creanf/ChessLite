@@ -2,11 +2,14 @@ const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, y
 const playerDetails = {isPlayerOne: false, roomId: ""};
 const takenPieces = {};
 const board = [ ["wR","wN","wB","wQ","wK","wB","wN","wR"],["wP","wP","wP","wP","wP","wP","wP","wP"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["bP","bP","bP","bP","bP","bP","bP","bP"],["bR","bN","bB","bQ","bK","bB","bN","bR"] ]; // the html selection stuff is unnecessary if this works
+const letterConvert = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
 
-// TO DO: Make more functional
 // TO DO: Assign the first player to a random color, then the second to the remaining color
 // TO DO: Close game room at end of game
 // TO DO: Use moveOnArray and isValidMove in main move event listener, print the board to check if working
+// TO DO: Queening
+
+// TO DO NEXT: Check if the pawn move function works
 
 const printBoard = () => {
     for (let i = 7; i >= 0; --i) {
@@ -88,7 +91,6 @@ const movePiece = (position, newPosition) => {
 }
 
 const movePieceOnArray = (position, newPosition) => { //////////TO DO
-    const letterConvert = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
 
     const currPos = {row: parseInt(position[1])-1, col: letterConvert[position[0]]};
     const destPos = {row: parseInt(newPosition[1])-1, col: letterConvert[newPosition[0]]};
@@ -108,7 +110,10 @@ const movePieceOnArray = (position, newPosition) => { //////////TO DO
 
 // @returns bool which is true if the move is value
 const isValidMove = (moveDetails) => { //////////////TO DO
-    const {id, newId, piece, newPiece} = moveDetails;
+    const {piece, newPiece} = moveDetails;
+    if (piece[1] == "P" && checkPawnMove(moveDetails)){
+        return true;
+    }
     
 }
 
@@ -189,3 +194,130 @@ socket.on("move", (moveData) => {  // recieved when the other player makes a mov
     movePieceOnArray(moveData.from, moveData.to);
     movePiece(position, newPosition);
 })
+
+const checkPawnMove = (moveData) => {
+    const {id, newId} = moveData;
+    const currRow = id[1]-1;
+    const currCol = letterConvert[id[0]];
+    const newRow = newId[1] - 1;
+    const newCol = letterConvert[newId[0]];
+    if (moveData.piece[0] == "w") {
+        // white pawns always move from a higher row number to a lower row number, and only change columns when taking a piece
+        // NOTE: they can be turned into any other piece once they reach the end of the board, but this can be dealt with later
+        // NOTE: the player actually cannot move out of bounds, so we do not need to check for this
+
+        // make sure to check if a capture is allowed
+        if (newRow == currRow + 1) {
+            if (newCol == currCol + 1 && board[newRow][newCol][0] == "b"){
+                return true;
+            }
+            else if (newCol == currCol - 1 && board[newRow][newCol][0] == "b"){
+                return true;
+            }
+            else if (newCol == currCol && board[newRow][newCol] == "__"){
+                if (newRow == 7){
+                    // queen function here ///////////////
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else if (newRow == currRow + 2) {
+            if (currRow != 2) {
+                return false;
+            }
+            else if (newCol != currCol){
+                return false;
+            }
+            else if (board[newRow][newCol] != "__") {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+    }
+    else if (moveData.piece[0] == "b"){
+        if (newRow == currRow - 1) {
+            if (newCol == currCol + 1 && board[newRow][newCol][0] == "b"){
+                return true;
+            }
+            else if (newCol == currCol - 1 && board[newRow][newCol][0] == "b"){
+                return true;
+            }
+            else if (newCol == currCol && board[newRow][newCol] == "__"){
+                if (newRow == 0){
+                    // queen function here ///////////////
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else if (newRow == currRow - 2) {
+            if (currRow != 7) {
+                return false;
+            }
+            else if (newCol != currCol){
+                return false;
+            }
+            else if (board[newRow][newCol] != "__") {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+    }
+    else {
+        return false;
+    }
+}
+
+const checkRookMove = (moveData) => {
+    if (moveData.piece[0] == "w") {
+
+    }
+    else {
+        
+    }
+}
+
+const checkKnightMove = (moveData) => {
+    if (moveData.piece[0] == "w") {
+
+    }
+    else {
+        
+    }
+}
+
+const checkBishopMove = (moveData) => {
+    if (moveData.piece[0] == "w") {
+
+    }
+    else {
+        
+    }
+}
+
+const checkKingMove = (moveData) => {
+    if (moveData.piece[0] == "w") {
+
+    }
+    else {
+        
+    }
+}
+
+const checkQueenMove = (moveData) => {
+    if (moveData.piece[0] == "w") {
+
+    }
+    else {
+        
+    }
+}
