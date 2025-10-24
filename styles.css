@@ -33,7 +33,7 @@ body {
 .container {
   display: flex;
   background-color: rgb(225, 198, 160);
-  padding: 20px; /* space inside an element*/
+  padding: 20px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   flex-direction: column;
@@ -43,7 +43,7 @@ body {
 .roomInfoForm {
   display: flex;
   background-color: rgb(225, 198, 160);
-  padding: 20px; /* space inside an element*/
+  padding: 20px; 
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   flex-direction: column;
@@ -95,14 +95,14 @@ body {
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   z-index: 2;
-  justify-items: center;   /* centers horizontally */
-  align-items: end;      /* aligns to top vertically */
+  justify-items: center; 
+  align-items: end;     
 }
 
 .square { 
   width: 100%; 
   height: 100%; 
-  justify-content: center;   /* centers horizontally */
+  justify-content: center;  
   align-items: end; 
   display:flex;
 }

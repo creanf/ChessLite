@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ playerName: name, id: roomId }),///// NOTE: you just JSON.stringify the data you are sending
+            body: JSON.stringify({ playerName: name, id: roomId }),
         });
 
         if (response.ok) {

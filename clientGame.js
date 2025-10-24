@@ -1,4 +1,4 @@
-const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false, piece: "", takenPiece: "", selectionMode: "piece" /**or position */};
+const moveDetails = {type: "first", id: null, newId: null, gameStarted: false, yourMove: false, pieceBoardCoords: null, pieceName: "", takenPiece: "", selectionMode: "piece"};
 const playerDetails = {isPlayerOne: false, roomId: ""};
 const takenPieces = {};
 const board = [ ["wR","wN","wB","wQ","wK","wB","wN","wR"],["wP","wP","wP","wP","wP","wP","wP","wP"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["bP","bP","bP","bP","bP","bP","bP","bP"],["bR","bN","bB","bQ","bK","bB","bN","bR"] ]; // the html selection stuff is unnecessary if this works
@@ -10,6 +10,11 @@ const letterConvert = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
 // TO DO: Queening
 
 // TO DO NEXT: Check if the pawn move function works
+
+// position = position in html, while id = actual coordinates
+const convertToRowCol = (id) => {
+    return {row: parseInt(id[1])-1, col: letterConvert[id[0]]};
+}
 
 const printBoard = () => {
     for (let i = 7; i >= 0; --i) {
@@ -49,7 +54,7 @@ const emitJoinData = (data) => {
         socket.emit("joinRoom", joinInfo);
     }
     else{
-        //emit name, room id, and if we want the game to start (not yet)
+        //emit name, room id, and if we want the game to start (in this case, we don't)
         const joinInfo = {
             playerName: data.firstPlayerName,
             roomId: data.id,
@@ -90,10 +95,10 @@ const movePiece = (position, newPosition) => {
     newImg.style = style;
 }
 
-const movePieceOnArray = (position, newPosition) => { //////////TO DO
+const movePieceOnArray = (id, newId) => { //TO DO
 
-    const currPos = {row: parseInt(position[1])-1, col: letterConvert[position[0]]};
-    const destPos = {row: parseInt(newPosition[1])-1, col: letterConvert[newPosition[0]]};
+    const currPos = convertToRowCol(id)
+    const destPos = convertToRowCol(newId)
 
     const currPiece = board[currPos.row][currPos.col];
     const destPiece = board[destPos.row][destPos.col];
@@ -103,18 +108,25 @@ const movePieceOnArray = (position, newPosition) => { //////////TO DO
     board[currPos.row][currPos.col] = "__";
     board[destPos.row][destPos.col] = currPiece;
 
-    console.log("curr piece: " + currPiece + " dest piece: " + destPiece + " currRow: " + currPos.row + " currCol: " + currPos.col + " destRow: " + destPos.row + " destCol: " + destPos.col);
-
     printBoard();
 }
 
 // @returns bool which is true if the move is value
-const isValidMove = (moveDetails) => { //////////////TO DO
-    const {piece, newPiece} = moveDetails;
-    if (piece[1] == "P" && checkPawnMove(moveDetails)){
+const isValidMove = (moveDetails) => { //TO DO
+    const {pieceName} = moveDetails; // these give piece coordinates, not the actual piece
+    console.log(pieceName);
+    if (playerDetails.isPlayerOne && pieceName[0] == "b") {
+        return false;
+    }
+    if (!playerDetails.isPlayerOne && pieceName[0] == "w") {
+        return false;
+    }
+    if (pieceName[1] == "P" && checkPawnMove(moveDetails)){
         return true;
     }
-    
+    else {
+        return false;
+    }
 }
 
 const flipBoard = function() {
@@ -152,7 +164,7 @@ const makeClickEvents = function(){
 const secondClick = function(id, newId) {
     const newPosition = document.getElementById(newId);
     const position = document.getElementById(id);
-    movePieceOnArray(moveDetails.id, moveDetails.newId) ////////////////This and socket move could be the same function if we just used io
+    movePieceOnArray(moveDetails.id, moveDetails.newId)
     movePiece(position, newPosition);
 }
 
@@ -174,17 +186,19 @@ document.addEventListener("move", (e) => {
     if (moveDetails.type == "first" && moveDetails.gameStarted && moveDetails.yourMove){
         moveDetails.id = at;
         moveDetails.type = "second";
-        const pieceElement = document.getElementById(at);
-        moveDetails.piece = pieceElement.querySelector('img').name;
+        moveDetails.pieceBoardCoords = convertToRowCol(moveDetails.id);
+        moveDetails.pieceName = board[moveDetails.pieceBoardCoords.row][moveDetails.pieceBoardCoords.col];
     }
     else if (moveDetails.type == "second"){
-        // function here called check if valid or (or something)
-        // if the move is not valid, reset the move data            ////////////////////
+        // function here called check if valid
+        // if the move is not valid, reset the move data  
         moveDetails.newId = at;
         moveDetails.type = "first";
-        moveDetails.yourMove = false;
-        socket.emit("move", {from: moveDetails.id,to: moveDetails.newId,roomId: playerDetails.roomId});
-        secondClick(moveDetails.id, moveDetails.newId);
+        if (isValidMove(moveDetails)) {
+            moveDetails.yourMove = false;
+            socket.emit("move", {from: moveDetails.id,to: moveDetails.newId,roomId: playerDetails.roomId});
+            secondClick(moveDetails.id, moveDetails.newId);
+        }
     }
 });
 
@@ -196,12 +210,13 @@ socket.on("move", (moveData) => {  // recieved when the other player makes a mov
 })
 
 const checkPawnMove = (moveData) => {
-    const {id, newId} = moveData;
+    const {id, newId, pieceName} = moveData;
     const currRow = id[1]-1;
     const currCol = letterConvert[id[0]];
     const newRow = newId[1] - 1;
     const newCol = letterConvert[newId[0]];
-    if (moveData.piece[0] == "w") {
+    console.log("piece name in checkpawn  - " + pieceName);
+    if (pieceName[0] == "w") {
         // white pawns always move from a higher row number to a lower row number, and only change columns when taking a piece
         // NOTE: they can be turned into any other piece once they reach the end of the board, but this can be dealt with later
         // NOTE: the player actually cannot move out of bounds, so we do not need to check for this
@@ -225,7 +240,7 @@ const checkPawnMove = (moveData) => {
             }
         }
         else if (newRow == currRow + 2) {
-            if (currRow != 2) {
+            if (currRow != 1) {
                 return false;
             }
             else if (newCol != currCol){
@@ -239,17 +254,17 @@ const checkPawnMove = (moveData) => {
             }
         }
     }
-    else if (moveData.piece[0] == "b"){
+    else if (pieceName[0] == "b"){
         if (newRow == currRow - 1) {
-            if (newCol == currCol + 1 && board[newRow][newCol][0] == "b"){
+            if (newCol == currCol + 1 && board[newRow][newCol][0] == "w"){
                 return true;
             }
-            else if (newCol == currCol - 1 && board[newRow][newCol][0] == "b"){
+            else if (newCol == currCol - 1 && board[newRow][newCol][0] == "w"){
                 return true;
             }
             else if (newCol == currCol && board[newRow][newCol] == "__"){
                 if (newRow == 0){
-                    // queen function here ///////////////
+                    // queen function here  - - will be needed for takes as well (duh)
                 }
                 return true;
             }
@@ -258,7 +273,7 @@ const checkPawnMove = (moveData) => {
             }
         }
         else if (newRow == currRow - 2) {
-            if (currRow != 7) {
+            if (currRow != 6) {
                 return false;
             }
             else if (newCol != currCol){

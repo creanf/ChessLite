@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
 
   socket.on('move', (moveData) => {
     console.log("move from " + moveData.from + " to " + moveData.to + " at " + moveData.roomId);
-    socket.to(moveData.roomId).emit("move", {from: moveData.from, to: moveData.to}); // only sent to everyone else in the room (maybe make this io if not working !!!!!!!!!)
+    socket.to(moveData.roomId).emit("move", {from: moveData.from, to: moveData.to}); // only sent to everyone else in the room
   });
 
   socket.on('disconnect', () => {
