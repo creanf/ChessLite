@@ -119,11 +119,12 @@ const movePieceOnArray = (id, newId) => { //TO DO
 const flipBoard = function() {
     const boardGrid = document.getElementById("boardGrid");
     const squaresArray = Array.from(boardGrid.querySelectorAll("div")); // (static, this won't be updated in the for loop, so we can treat it as a copy)
+
     boardGrid.innerHTML = "";
     for (let i = 7; i > -1; i--){
         for (let j = 7; j > -1 ; j--){
             const arrayNumber = i * 8 + j;
-            const piece = squaresArray[arrayNumber]
+            const piece = squaresArray[arrayNumber];
             boardGrid.appendChild(piece);
         }
     }
@@ -157,9 +158,14 @@ socket.on("startGame", (newPlayer) => {
     console.log("starting game");
     moveDetails.gameStarted = true;
     const playerTwoName = newPlayer.playerTwo;
-    document.getElementById("nameSecondPlayer").innerText = "Player 2: " + playerTwoName;
     if (playerDetails.isPlayerOne){
+        document.getElementById("nameSecondPlayer").innerText = "Player 2: " + playerTwoName;
         moveDetails.yourMove = true;
+    }
+    else {
+        const playerOneName = localStorage.getItem('firstPlayerName');
+        document.getElementById("nameFirstPlayer").innerText = "Player 2: " + playerTwoName;
+        document.getElementById("nameSecondPlayer").innerText = "Player 1: " + playerOneName; // rename html id to topNameDisplay and bottomNameDisplay for clarity
     }
 });
 
@@ -540,3 +546,10 @@ const checkQueenMove = (moveData, currColor, oppColor) => {
     // can just use checkRook and checkBishop
     return checkBishopMove(moveData, currColor, oppColor) || checkRookMove(moveData, currColor, oppColor);
 }
+
+// queening (or getting a pawn to the end of the board) will require a new ui element
+
+// here is where we deal with when the king is in check
+// first, we will make a function similar to inTheWay, that checks in all directions which pieces face the king, then we go from there (also checks for knight proximity)
+// if all empty squares near the king are also in check, it is checkmate. The only exception would be when only one piece is attacking the king and can be taken
+// so we need an "under attack" function to check if a square is under attack, then we need to generate a list of allowed moves based on this
