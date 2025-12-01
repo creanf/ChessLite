@@ -6,6 +6,12 @@ const takenPieces = {};
 const board = [ ["wR","wN","wB","wQ","wK","wB","wN","wR"],["wP","wP","wP","wP","wP","wP","wP","wP"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["__","__","__","__","__","__","__","__"],["bP","bP","bP","bP","bP","bP","bP","bP"],["bR","bN","bB","bQ","bK","bB","bN","bR"] ]; // the html selection stuff is unnecessary if this works
 const letterConvert = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7};
 
+let whiteKingPos = {row: 0, col: 4};
+let blackKingPos = {row: 7, col: 4};
+
+const pinnedPieces = [];
+const pinnerPieces = []; // these will be dictionaries, the piece name (a string) will be paired with their coordinates - duplicate piece names can be distinguished by their coordinates
+
 // TO DO: Assign the first player to a random color, then the second to the remaining color
 // TO DO: Close game room at end of game
 // TO DO: Use moveOnArray and isValidMove in main move event listener, print the board to check if working
@@ -41,8 +47,8 @@ const setPlayerNameView = ({firstPlayerName, secondPlayerName, id, isFirst}) => 
     playerDetails.roomId = id;
     console.log("name 1 - " + firstPlayerName + " name 2 - " + secondPlayerName + " isFirst - " + isFirst);
     document.getElementById('gameId').innerText = "Game ID: " + id;
-    document.getElementById("nameFirstPlayer").innerText = "Player 1: " + firstPlayerName;
-    document.getElementById("nameSecondPlayer").innerText = "Player 2: " + secondPlayerName;
+    document.getElementById("nameBottomPlayer").innerText = "Player 1: " + firstPlayerName;
+    document.getElementById("nameTopPlayer").innerText = "Player 2: " + secondPlayerName;
 }
 
 const emitJoinData = (data) => {
@@ -159,13 +165,13 @@ socket.on("startGame", (newPlayer) => {
     moveDetails.gameStarted = true;
     const playerTwoName = newPlayer.playerTwo;
     if (playerDetails.isPlayerOne){
-        document.getElementById("nameSecondPlayer").innerText = "Player 2: " + playerTwoName;
+        document.getElementById("nameTopPlayer").innerText = "Player 2: " + playerTwoName;
         moveDetails.yourMove = true;
     }
     else {
         const playerOneName = localStorage.getItem('firstPlayerName');
-        document.getElementById("nameFirstPlayer").innerText = "Player 2: " + playerTwoName;
-        document.getElementById("nameSecondPlayer").innerText = "Player 1: " + playerOneName; // rename html id to topNameDisplay and bottomNameDisplay for clarity
+        document.getElementById("nameBottomPlayer").innerText = "Player 2: " + playerTwoName;
+        document.getElementById("nameTopPlayer").innerText = "Player 1: " + playerOneName; // rename html id to topNameDisplay and bottomNameDisplay for clarity
     }
 });
 
@@ -179,7 +185,16 @@ document.addEventListener("move", (e) => {
     }
     else if (moveDetails.type == "second"){
         // function here called check if valid
-        // if the move is not valid, reset the move data  
+        // if the move is not valid, reset the move data 
+
+        // update pin list
+        if (playerDetails.isPlayerOne){
+            createPinList(whiteKingPos, "w", "b");
+        }
+        else {
+            createPinList(blackKingPos, "b", "w");
+        }
+
         moveDetails.newId = at;
         moveDetails.type = "first";
         if (isValidMove(moveDetails)) {
@@ -198,9 +213,10 @@ socket.on("move", (moveData) => {  // recieved when the other player makes a mov
 })
 
 // @returns bool which is true if the move is value
+// TO DO: Check for pin
+// also updates the kingPos if necessary
 const isValidMove = (moveDetails) => { //TO DO
     const {pieceName} = moveDetails; // these give piece coordinates, not the actual piece
-    console.log(pieceName);
     if (playerDetails.isPlayerOne && pieceName[0] == "b") {
         return false;
     }
@@ -221,6 +237,7 @@ const isValidMove = (moveDetails) => { //TO DO
             return true;
         }
         else if (pieceName[1] == "K" && checkKingMove(moveDetails, "w", "b")){
+            whiteKingPos = convertToRowCol(moveDetails.newId);
             return true;
         }
         else if (pieceName[1] == "Q" && checkQueenMove(moveDetails, "w", "b")){
@@ -244,6 +261,7 @@ const isValidMove = (moveDetails) => { //TO DO
             return true;
         }
         else if (pieceName[1] == "K" && checkKingMove(moveDetails, "b", "w")){
+            blackKingPos = convertToRowCol(moveDetails.newId);
             return true;
         }
         else if (pieceName[1] == "Q" && checkQueenMove(moveDetails, "b", "w")){
@@ -257,13 +275,13 @@ const isValidMove = (moveDetails) => { //TO DO
 
 // TO DO: Refactor with convertToRowCol and with the new color system to reduce redundancy
 // currColor and oppColor can either be "w" or "b"
+// en passant
 const checkPawnMove = (moveData) => {
     const {id, newId, pieceName} = moveData;
     const currRow = id[1]-1;
     const currCol = letterConvert[id[0]];
     const newRow = newId[1] - 1;
     const newCol = letterConvert[newId[0]];
-    console.log("piece name in checkpawn  - " + pieceName);
     if (pieceName[0] == "w") {
         // white pawns always move from a higher row number to a lower row number, and only change columns when taking a piece
         // NOTE: they can be turned into any other piece once they reach the end of the board, but this can be dealt with later
@@ -348,7 +366,6 @@ const checkPawnMove = (moveData) => {
 const inTheWay = (currPos, newPos, vertItr, horiItr) => {
     const checkPos = {row: currPos.row + vertItr, col: currPos.col + horiItr};
     while (checkPos.row != newPos.row || checkPos.col != newPos.col) {
-        console.log("checking" + checkPos.row + " " + checkPos.col)
         const checkPieceName = board[checkPos.row][checkPos.col];
         if (checkPieceName != "__") {
             return true;
@@ -500,6 +517,9 @@ const checkKingMove = (moveData, currColor, oppColor) => {
     const currPos = convertToRowCol(id);
     const newPos = convertToRowCol(newId);
     const targetName = board[newPos.row][newPos.col];
+
+    // update pinned pieces?
+
     let isValid = false;
     // simply check all eight directions
     if (newPos.row == currPos.row + 1 && newPos.col == currPos.col + 1) {
@@ -553,3 +573,111 @@ const checkQueenMove = (moveData, currColor, oppColor) => {
 // first, we will make a function similar to inTheWay, that checks in all directions which pieces face the king, then we go from there (also checks for knight proximity)
 // if all empty squares near the king are also in check, it is checkmate. The only exception would be when only one piece is attacking the king and can be taken
 // so we need an "under attack" function to check if a square is under attack, then we need to generate a list of allowed moves based on this
+
+// the function threatList a list of pieces threatening
+const getThreatList = (currPos) => {
+    // needed: knightThreat, lineThreat, diagonalThreat, also maybe pawn threat (think of en passant)
+
+}
+
+// another thing to keep in mind: pinned pieces
+// assumes that kingPos is the position of the selected king
+// pin = draw a line from the king, if it hits your piece then an enemy piece pointing in the itr direction, it is pinned and should be added to a list of pinned pieces
+// the pin list should be updated whenever the king is moved, and a move is not valid if it is pinned
+
+// IMPORTANT: we also need to check if the opponent has moved the pinning piece, so we need a pinning piece list and whenever it is the current player's move again, we need to check if any of the pinned pieces have changed positions
+// even if the pinning piece has changed directions, we need to check if there is a piece behind it that "maintains" the pin.
+const pinCheckItr = (kingPos, vertItr, horiItr, currColor, oppColor) => {
+    let pinCandidate = "";
+    let pinCandidateCoords = {row: -1, col: -1};
+    let checkPos = {row: kingPos.row + vertItr, col: kingPos.col + horiItr};
+    const notPinnedObj = {isPin: false, pinnedPiece: "", pinnedCoords: {row: "", col: ""}, pinnerPiece: "", pinnerPieceCoords: {row: "", col: ""}};
+    while (checkPos.row > 0 && checkPos.col > 0 && checkPos.row < 8 && checkPos.col < 8) {
+        const checkPieceName = board[checkPos.row][checkPos.col];
+        if (checkPieceName != "__") {
+            if (pinCandidate == "") {
+                if (checkPieceName[0] == currColor) {
+                    pinCandidate = checkPieceName;
+                    pinCandidateCoords = {...checkPos}; // is there a way to write this more efficiently?
+                }
+                else {
+                    return notPinnedObj;
+                }
+            }
+            else {
+                if (checkPieceName[0] == oppColor) {
+                    if (vertItr != 0 && horiItr != 0){
+                        if (checkPieceName[1] == "B" || checkPieceName[1] == "Q"){
+                            return {isPin: true, pinnedPiece: pinCandidate, pinnedCoords: pinCandidateCoords, pinnerPiece: checkPieceName, pinnerPieceCoords: {row: checkPos.row, col: checkPos.col}};
+                        }
+                        else {
+                            return notPinnedObj;
+                        }
+                    }
+                    else {
+                        if (checkPieceName[1] == "R" || checkPieceName[1] == "Q"){
+                            return {isPin: true, pinnedPiece: pinCandidate, pinnedCoords: pinCandidateCoords, pinnerPiece: checkPieceName, pinnerPieceCoords: {row: checkPos.row, col: checkPos.col}};
+                        }
+                        else {
+                            return notPinnedObj;
+                        }
+                    }
+                }
+                else {
+                    return notPinnedObj;
+                }
+            }
+        }
+        checkPos.row += vertItr;
+        checkPos.col += horiItr;
+    }
+    return notPinnedObj;
+}
+
+const printPinDetails = (pinDetails) => {
+    console.log("pinned piece: " + pinDetails.pinnedPiece + " at " + pinDetails.pinnedCoords.row + ", " + pinDetails.pinnedCoords.col);
+    console.log("pinner piece: " + pinDetails.pinnerPiece + " at " + pinDetails.pinnerPieceCoords.row + ", " + pinDetails.pinnerPieceCoords.col); // inconsistent naming
+}
+
+const createPinList = (kingPos, currColor, oppColor) => {
+    const northPinDetails = pinCheckItr(kingPos, 1, 0, currColor, oppColor); // issue when the white bishop was pinned by the rook next to the king I think
+    const northEastPinDetails = pinCheckItr(kingPos, 1, 1, currColor, oppColor);
+    const eastPinDetails = pinCheckItr(kingPos, 0, 1, currColor, oppColor);
+    const southEastPinDetails = pinCheckItr(kingPos, -1, 1, currColor, oppColor);
+    const southPinDetails = pinCheckItr(kingPos, -1, 0, currColor, oppColor);
+    const southWestPinDetails = pinCheckItr(kingPos, -1, -1, currColor, oppColor);
+    const westPinDetails = pinCheckItr(kingPos, 0, -1, currColor, oppColor);
+    const northWestPinDetails = pinCheckItr(kingPos, 1, -1, currColor, oppColor);
+    if (northPinDetails.isPin) {
+        console.log("adding north pin");
+        printPinDetails(northPinDetails);
+    }
+    if (northEastPinDetails.isPin) {
+        console.log("adding northeast pin");
+        printPinDetails(northEastPinDetails);
+    }
+    if (eastPinDetails.isPin) {
+        console.log("adding east pin");
+        printPinDetails(eastPinDetails);
+    }
+    if (southEastPinDetails.isPin) {
+        console.log("adding southeast pin");
+        printPinDetails(southEastPinDetails);
+    }
+    if (southPinDetails.isPin) {
+        console.log("adding south pin");
+        printPinDetails(southPinDetails);
+    }
+    if (southWestPinDetails.isPin) {
+        console.log("adding southwest pin");
+        printPinDetails(southWestPinDetails);
+    }
+    if (westPinDetails.isPin) {
+        console.log("adding west pin");
+        printPinDetails(westPinDetails);
+    }
+    if (northWestPinDetails.isPin) {
+        console.log("adding northwest pin");
+        printPinDetails(northWestPinDetails);
+    }
+}
